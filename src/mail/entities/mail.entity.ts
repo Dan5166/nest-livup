@@ -1,21 +1,49 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema()
-export class Mail extends Document {
-  // La extensión le añade todo lo necesario
-  // id: string // Mongo me lo da
+export type MailDocument = Mail & Document;
+
+export enum MailStatus {
+  PENDING = 'pending',
+  SENT = 'sent',
+  FAILED = 'failed',
+}
+
+@Schema({ timestamps: true }) // createdAt / updatedAt 🔥
+export class Mail {
   @Prop({
-    unique: true,
+    required: true,
     index: true,
   })
-  name: string;
+  to: string; // destinatario
 
   @Prop({
-    unique: true,
+    required: true,
+  })
+  subject: string;
+
+  @Prop({
+    required: true,
+  })
+  html: string;
+
+  @Prop()
+  text?: string;
+
+  @Prop({
+    enum: MailStatus,
+    default: MailStatus.PENDING,
     index: true,
   })
-  no: number;
+  status: MailStatus;
+
+  @Prop()
+  error?: string; // mensaje de error si falla
+
+  @Prop({
+    index: true,
+  })
+  relatedEntityId?: string; // reportId, userId, etc.
 }
 
 export const MailSchema = SchemaFactory.createForClass(Mail);

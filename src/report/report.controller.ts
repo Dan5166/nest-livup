@@ -17,9 +17,9 @@ export class ReportController {
     return this.reportService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reportService.findOne(+id);
+  @Get(':term')
+  findOne(@Param('term') term: string) {
+    return this.reportService.findOne(term);
   }
 
   @Patch(':id')

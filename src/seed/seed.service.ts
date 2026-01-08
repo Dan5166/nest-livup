@@ -1,29 +1,39 @@
 // Dejar este archivo como en el curso, tuve que usar un https agent por el firewall de la empresa
 import { Injectable } from '@nestjs/common';
-import axios, { AxiosInstance } from 'axios';
-import * as https from 'https'; // 1. Import https
 import { PokeResponse } from './interfaces/poke-response.iterfaces';
+import { InjectModel } from '@nestjs/mongoose';
+import { Pokemon } from 'src/pokemon/entities/pokemon.entity';
+import { Model } from 'mongoose';
+import { AxiosAdapter } from 'src/common/adapters/axios.adapter';
 
 @Injectable()
 export class SeedService {
 
-  // 2. Configure the instance to ignore unauthorized certificates
-  private readonly axios: AxiosInstance = axios.create({
-    httpsAgent: new https.Agent({  
-      rejectUnauthorized: false
-    })
-  });
+  constructor(
+    @InjectModel(Pokemon.name)
+    private readonly pokemonModel: Model<Pokemon>,
+    private readonly http: AxiosAdapter
+  ) {}
+
+  
   
   async executeSeed() {
-    const { data } = await this.axios.get<PokeResponse>('https://pokeapi.co/api/v2/pokemon?limit=10');
 
-    data.results.forEach(({name, url}) => {
+    await this.pokemonModel.deleteMany({});
+
+    const data = await this.http.get<PokeResponse>('https://pokeapi.co/api/v2/pokemon?limit=650');
+
+    const pokemonToInsert: {name: string, no: number}[] = []
+
+    data.results.forEach(async({name, url}) => {
       const segments = url.split('/');
       const no = +segments[segments.length - 2]
 
-      console.log({name, no})
+      pokemonToInsert.push({name, no});
     })
 
-    return data.results;
+    this.pokemonModel.insertMany(pokemonToInsert)
+
+    return 'Seed executed';
   }
 }
